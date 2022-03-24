@@ -24,12 +24,18 @@
     <ClCompile Include="Logger.cc">
       <Filter>소스 파일</Filter>
     </ClCompile>
+    <ClCompile Include="Client.cc">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Logger.h">
       <Filter>소스 파일</Filter>
     </ClInclude>
     <ClInclude Include="IOCP.h">
+      <Filter>소스 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Client.h">
       <Filter>소스 파일</Filter>
     </ClInclude>
   </ItemGroup>

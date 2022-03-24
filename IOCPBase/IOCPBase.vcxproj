@@ -141,11 +141,13 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Client.cc" />
     <ClCompile Include="IOCP.cc" />
     <ClCompile Include="Logger.cc" />
     <ClCompile Include="main.cc" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Client.h" />
     <ClInclude Include="IOCP.h" />
     <ClInclude Include="Logger.h" />
   </ItemGroup>
