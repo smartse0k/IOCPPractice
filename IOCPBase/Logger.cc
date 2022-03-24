@@ -1,7 +1,7 @@
 #include "Logger.h"
 
 namespace phodobit {
-	std::map<std::string, Logger*> * Logger::loggers = new std::map<std::string, Logger*>();
+	std::map<std::string, Logger*> * Logger::loggers = nullptr;
 
 	Logger::Logger(std::string name, int defaultLogLevel) {
 		this->name = name;
@@ -9,6 +9,10 @@ namespace phodobit {
 	}
 
 	Logger* Logger::getLogger(const std::string name) {
+		if (loggers == nullptr) {
+			loggers = new std::map<std::string, Logger*>();
+		}
+
 		std::map<std::string, Logger*>::iterator it = loggers->find(name);
 
 		if (it == loggers->end()) {
@@ -55,4 +59,12 @@ namespace phodobit {
 
 		return *this;
 	}
+	template Logger& Logger::operator<<(int);
+	template Logger& Logger::operator<<(unsigned int);
+	template Logger& Logger::operator<<(short);
+	template Logger& Logger::operator<<(unsigned short);
+	template Logger& Logger::operator<<(float);
+	template Logger& Logger::operator<<(double);
+	template Logger& Logger::operator<<(long);
+	template Logger& Logger::operator<<(unsigned long);
 }
