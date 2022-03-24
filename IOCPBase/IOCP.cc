@@ -1,4 +1,5 @@
 #include "IOCP.h"
+#include "Client.h"
 
 namespace phodobit {
 	Logger* IOCP::logger = Logger::getLogger("IOCP")->setLogLevel(LogLevel::DEBUG);
@@ -18,12 +19,16 @@ namespace phodobit {
 			logger->err() << "CreateIoCompletionPort failed.\n";
 			throw "CreateIoCompletionPort failed.";
 		}
+
+		_nextCompletionKey = 0;
 	}
 
-	void IOCP::bind(unsigned short port, int backlog = 5) {
+	void IOCP::bind(unsigned short port) {
 		logger->debug() << "bind()\n";
 
-		SOCKET socket = WSASocket(PF_INET, SOCK_STREAM, 0, NULL, 0, WSA_FLAG_OVERLAPPED);
+		this->port = port;
+
+		serverSocket = WSASocket(PF_INET, SOCK_STREAM, 0, NULL, 0, WSA_FLAG_OVERLAPPED);
 
 		SOCKADDR_IN socketAddrIn;
 		memset(&socketAddrIn, 0, sizeof(socketAddrIn));
@@ -36,18 +41,98 @@ namespace phodobit {
 		//        이벤트를 정상적으로 수신할 수 있는지에 대해서 조사해볼것.
 		CreateIoCompletionPort((HANDLE)socket, iocpHandle, 0, 0);
 
-		int ret;
-
-		ret = ::bind(socket, (sockaddr*)&socketAddrIn, sizeof(socketAddrIn));
+		int ret = ::bind(serverSocket, (sockaddr*)&socketAddrIn, sizeof(socketAddrIn));
 		if (ret == SOCKET_ERROR) {
 			logger->err() << "bind failed.\n";
 			throw "bind failed.";
 		}
+	}
 
-		ret = listen(socket, backlog);
+	void IOCP::listen(int backlog) {
+		int ret = ::listen(serverSocket, backlog);
 		if (ret == SOCKET_ERROR) {
 			logger->err() << "listen failed.\n";
 			throw "listen failed.";
 		}
+
+		logger->info() << "listening on port " << port << ".\n";
+	}
+
+	int IOCP::getNextCompletionKey() {
+		mutexGetNextCompletionKey.lock();
+		_nextCompletionKey++;
+		mutexGetNextCompletionKey.unlock();
+		return _nextCompletionKey;
+	}
+
+	// Acceptor Thread Entry Point
+	void IOCP::acceptor() {
+		while (true) {
+			SOCKET clientSocket;
+			SOCKADDR_IN socketAddrIn;
+			int sockerAddrInSize = sizeof(socketAddrIn);
+
+			memset(&socketAddrIn, 0, sockerAddrInSize);
+
+			clientSocket = accept(serverSocket, (SOCKADDR *)&socketAddrIn, &sockerAddrInSize);
+
+			int nextCompletionKey = getNextCompletionKey();
+
+			Client* client = new Client(clientSocket, nextCompletionKey);
+			Client::setClient(nextCompletionKey, client);
+			client->bind(iocpHandle);
+			client->recv();
+		}
+	}
+
+	// Worker Thread Entry Point
+	void IOCP::worker() {
+		while (true) {
+			DWORD transferByteSize;
+			int completionKey = -1;
+			WSAOVERLAPPED wsaOverlapped;
+			
+			bool ret = GetQueuedCompletionStatus(
+				iocpHandle,
+				&transferByteSize,
+				(ULONG_PTR*)&completionKey,
+				(LPOVERLAPPED*)&wsaOverlapped,
+				INFINITE
+			);
+
+			logger->debug() << "transferByteSize: " << transferByteSize << "\n";
+
+			Client *client = Client::getClient(completionKey);
+			if (client == nullptr) {
+				logger->err() << "client is null\n";
+				continue;
+			}
+
+			client->recv();
+		}
+	}
+
+	void IOCP::createAcceptThread(int threadCount) {
+		logger->debug() << "createAcceptThread()\n";
+
+		std::thread *thread;
+		for (int i = 0; i < threadCount; i++) {
+			thread = new std::thread(&IOCP::acceptor, this);
+			acceptThreads.push_back(thread);
+		}
+
+		logger->info() << threadCount << " of accept thread are created.\n";
+	}
+
+	void IOCP::createWorkerThread(int threadCount) {
+		logger->debug() << "createWorkerThread()\n";
+
+		std::thread* thread;
+		for (int i = 0; i < threadCount; i++) {
+			thread = new std::thread(&IOCP::worker, this);
+			workerThreads.push_back(thread);
+		}
+
+		logger->info() << threadCount << " of work thread are created.\n";
 	}
 }
