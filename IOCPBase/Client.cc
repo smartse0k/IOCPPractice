@@ -39,8 +39,6 @@ namespace phodobit {
 		wsaBuf.buf = recvBuf;
 		wsaBuf.len = sizeof(recvBuf);
 
-		std::cout << sizeof(recvBuf);
-
 		readSize = 0;
 		readFlag = 0;
 
