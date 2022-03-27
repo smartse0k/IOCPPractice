@@ -1,4 +1,5 @@
 #include "Client.h"
+#include "Packet.h"
 
 namespace phodobit {
     Logger* Client::logger = Logger::getLogger("Client")->setLogLevel(LogLevel::DEBUG);
@@ -98,9 +99,54 @@ namespace phodobit {
             logger->printByteArray(recvOverlapped.buffer, 0, recvOverlapped.currentBufferSize);
             *logger << "\n";
         }
-        
 
-        // TODO : process protocol
+        while (true) {
+            unsigned short packetLength = 0;
+
+            // 아직 패킷 크기가 도착하지 않은 경우
+            if (recvOverlapped.currentBufferSize < sizeof(packetLength)) {
+                logger->debug() << "Can not resolve packet size. waiting for next data.";
+                break;
+            }
+
+            // 패킷 길이 복사
+            // 2번째 인자를 "recvOverlapped.buffer"로 해도 될 것 같은데 C6385 경고가 나타난다.
+            std::memcpy(&packetLength, &recvOverlapped.buffer[0], sizeof(packetLength));
+
+            // 패킷 길이가 0으로 전달되었다면 무시한다. 이후 이 클라이언트의 패킷을 처리할 수 없을 수도 있다.
+            if (packetLength == 0) {
+                logger->warn() << "Packet length is zero.";
+                packetLength = sizeof(packetLength);
+                break;
+            }
+
+            // 아직 패킷 전체가 도착하지 않은 경우
+            if (recvOverlapped.currentBufferSize < packetLength) {
+                logger->debug() << "Can not resolve packet. waiting for next data. packetLength=" << packetLength
+                    << ", currentLength=" << recvOverlapped.currentBufferSize << "\n";
+                break;
+            }
+
+            // 패킷 생성
+            Packet* packet = Packet::createFromByteArray(recvOverlapped.buffer, 0, packetLength);
+            packet->printInfoToCLI();
+
+            recvOverlapped.currentBufferSize -= packetLength;
+
+            // 이 경우가 나와서는 안된다.
+            if (recvOverlapped.currentBufferSize < 0) {
+                logger->err() << "recvOverlapped.currentBufferSize is less than 0";
+                throw "recvOverlapped.currentBufferSize is less than 0";
+            }
+
+            // 더 이상 남은 패킷이 없는 경우
+            if (recvOverlapped.currentBufferSize == 0) {
+                break;
+            }
+
+            // 남은 데이터 이동
+            std::memmove(recvOverlapped.buffer, &recvOverlapped.buffer[packetLength], recvOverlapped.currentBufferSize);
+        }
     }
 
     void Client::onSend(unsigned int length) {
