@@ -149,6 +149,7 @@
     <ClCompile Include="main.cc" />
     <ClCompile Include="Packet.cc" />
     <ClCompile Include="PacketProcessor.cc" />
+    <ClCompile Include="PacketReader.cc" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Client.h" />

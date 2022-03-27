@@ -16,8 +16,16 @@ namespace phodobit {
         std::memcpy(packet->data, &byteArray[start], length);
 
         packet->length = length;
+        packet->readOffset = 0;
 
         return packet;
+    }
+
+    // Read 관련은 PacketReader.cc에서 구현한다.
+    // Write 관련은 PacketWriter.cc에서 구현한다.
+
+    int Packet::getOwnerCompletionKey() {
+        return ownerCompletionKey;
     }
 
     void Packet::printInfoToCLI() {

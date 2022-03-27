@@ -33,6 +33,9 @@
     <ClCompile Include="PacketProcessor.cc">
       <Filter>소스 파일</Filter>
     </ClCompile>
+    <ClCompile Include="PacketReader.cc">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="PacketProcessor.h">

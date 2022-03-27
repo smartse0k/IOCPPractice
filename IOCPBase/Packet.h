@@ -7,6 +7,12 @@ namespace phodobit {
     public:
         static Packet *createFromByteArray(int ownerCompletionKey, char *byteArray, unsigned int start, unsigned short length);
 
+        bool read(int& out);
+        bool read(unsigned int& out);
+        bool read(std::string& out);
+
+        int getOwnerCompletionKey();
+
         void printInfoToCLI();
 
         ~Packet();
@@ -16,5 +22,7 @@ namespace phodobit {
         int ownerCompletionKey;
         char* data;
         unsigned short length;
+
+        unsigned short readOffset;
     };
 }
