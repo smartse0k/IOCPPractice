@@ -147,7 +147,7 @@
     <ClCompile Include="IOCP.cc" />
     <ClCompile Include="Logger.cc" />
     <ClCompile Include="main.cc" />
-    <ClCompile Include="Packet.cpp" />
+    <ClCompile Include="Packet.cc" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Client.h" />

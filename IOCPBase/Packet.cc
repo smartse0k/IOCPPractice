@@ -5,10 +5,12 @@
 namespace phodobit {
     Logger* Packet::logger = Logger::getLogger("Packet")->setLogLevel(LogLevel::DEBUG);
 
-    Packet* Packet::createFromByteArray(char* byteArray, unsigned int start, unsigned short length) {
+    Packet* Packet::createFromByteArray(int ownerCompletionKey, char* byteArray, unsigned int start, unsigned short length) {
         logger->debug() << "createFromByteArray()";
 
         Packet* packet = new Packet();
+
+        packet->ownerCompletionKey = ownerCompletionKey;
 
         packet->data = new char[length];
         std::memcpy(packet->data, &byteArray[start], length);

@@ -5,7 +5,7 @@
 namespace phodobit {
     class Packet {
     public:
-        static Packet *createFromByteArray(char *byteArray, unsigned int start, unsigned short length);
+        static Packet *createFromByteArray(int ownerCompletionKey, char *byteArray, unsigned int start, unsigned short length);
 
         void printInfoToCLI();
 
@@ -13,6 +13,7 @@ namespace phodobit {
     private:
         static Logger* logger;
 
+        int ownerCompletionKey;
         char* data;
         unsigned short length;
     };

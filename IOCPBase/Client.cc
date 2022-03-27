@@ -128,7 +128,7 @@ namespace phodobit {
             }
 
             // 패킷 생성
-            Packet* packet = Packet::createFromByteArray(recvOverlapped.buffer, 0, packetLength);
+            Packet* packet = Packet::createFromByteArray(completionKey, recvOverlapped.buffer, 0, packetLength);
             packet->printInfoToCLI();
 
             recvOverlapped.currentBufferSize -= packetLength;
