@@ -4,6 +4,7 @@
 #include <winsock2.h>
 
 #include "Logger.h"
+#include "Overlapped.h"
 
 namespace phodobit {
 	class Client {
@@ -14,6 +15,9 @@ namespace phodobit {
 		Client(SOCKET socket, int completionKey);
 		void bind(HANDLE iocpHandle);
 		void recv();
+		void send();
+		void onRecv(unsigned int length);
+		void onSend(unsigned int length);
 	private:
 		static Logger* logger;
 
@@ -22,10 +26,7 @@ namespace phodobit {
 		SOCKET socket;
 		int completionKey;
 
-		WSABUF wsaBuf;
-		char recvBuf[8 * 1024];
-		DWORD readSize;
-		DWORD readFlag;
-		WSAOVERLAPPED wsaOverlapped;
+		Overlapped recvOverlapped;
+		Overlapped sendOverlapped;
 	};
 }

@@ -1,4 +1,5 @@
 #include "IOCP.h"
+#include "Overlapped.h"
 #include "Client.h"
 
 namespace phodobit {
@@ -87,16 +88,18 @@ namespace phodobit {
 
 	// Worker Thread Entry Point
 	void IOCP::worker() {
+		DWORD threadId = GetCurrentThreadId();
+
 		while (true) {
 			DWORD transferByteSize;
 			int completionKey = -1;
-			WSAOVERLAPPED wsaOverlapped;
+			Overlapped *overlapped = nullptr;
 			
 			bool ret = GetQueuedCompletionStatus(
 				iocpHandle,
 				&transferByteSize,
 				(ULONG_PTR*)&completionKey,
-				(LPOVERLAPPED*)&wsaOverlapped,
+				(LPOVERLAPPED *)&overlapped,
 				INFINITE
 			);
 
@@ -108,7 +111,15 @@ namespace phodobit {
 				continue;
 			}
 
-			client->recv();
+			if (overlapped->type == Overlapped::TYPE::RECV) {
+				client->onRecv(transferByteSize);
+				client->recv();
+			} else if (overlapped->type == Overlapped::TYPE::SEND) {
+				// TODO : Send에 대해서 만들자
+			} else {
+				logger->err() << "not initilized overlapped detected. threadId=" << threadId << ", completionKey=" << completionKey;
+				continue;
+			}
 		}
 	}
 
