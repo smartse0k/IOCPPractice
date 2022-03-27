@@ -117,7 +117,6 @@ namespace phodobit {
             if (packetLength == 0) {
                 logger->warn() << "Packet length is zero.";
                 packetLength = sizeof(packetLength);
-                break;
             }
 
             // 아직 패킷 전체가 도착하지 않은 경우

@@ -6,7 +6,7 @@ namespace phodobit {
     Logger* Packet::logger = Logger::getLogger("Packet")->setLogLevel(LogLevel::DEBUG);
 
     Packet* Packet::createFromByteArray(int ownerCompletionKey, char* byteArray, unsigned int start, unsigned short length) {
-        logger->debug() << "createFromByteArray()";
+        logger->debug() << "createFromByteArray()\n";
 
         Packet* packet = new Packet();
 
