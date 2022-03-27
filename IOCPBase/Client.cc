@@ -87,6 +87,19 @@ namespace phodobit {
                         << "  received size: " << length << "\n"
                         << "  buffer size: " << recvOverlapped.currentBufferSize << "\n";
 
+        if (true) {
+            *logger << "  received buffer: ";
+            logger->printByteArray(recvOverlapped.buffer,
+                                   recvOverlapped.currentBufferSize - length,
+                                   length);
+            *logger << "\n";
+
+            *logger << "  total buffer: ";
+            logger->printByteArray(recvOverlapped.buffer, 0, recvOverlapped.currentBufferSize);
+            *logger << "\n";
+        }
+        
+
         // TODO : process protocol
     }
 
