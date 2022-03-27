@@ -150,6 +150,7 @@
     <ClInclude Include="Client.h" />
     <ClInclude Include="IOCP.h" />
     <ClInclude Include="Logger.h" />
+    <ClInclude Include="Overlapped.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
