@@ -148,6 +148,7 @@
     <ClCompile Include="Logger.cc" />
     <ClCompile Include="main.cc" />
     <ClCompile Include="Packet.cc" />
+    <ClCompile Include="PacketProcessor.cc" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Client.h" />
@@ -155,6 +156,7 @@
     <ClInclude Include="Logger.h" />
     <ClInclude Include="Overlapped.h" />
     <ClInclude Include="Packet.h" />
+    <ClInclude Include="PacketProcessor.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
