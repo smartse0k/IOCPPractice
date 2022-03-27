@@ -21,7 +21,7 @@ namespace phodobit {
         }
 
         ~Overlapped() {
-            delete buffer;
+            delete[] buffer;
         }
 
         WSABUF wsaBuf;
