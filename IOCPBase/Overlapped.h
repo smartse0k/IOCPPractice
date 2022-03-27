@@ -15,7 +15,7 @@ namespace phodobit {
 
         Overlapped() {
             buffer = new char[IOCP_BUFFER_SIZE];
-            memset(buffer, 0, IOCP_BUFFER_SIZE);
+            std::memset(buffer, 0, IOCP_BUFFER_SIZE);
             type = TYPE::NONE;
             currentBufferSize = 0;
         }

@@ -32,7 +32,7 @@ namespace phodobit {
         serverSocket = WSASocket(PF_INET, SOCK_STREAM, 0, NULL, 0, WSA_FLAG_OVERLAPPED);
 
         SOCKADDR_IN socketAddrIn;
-        memset(&socketAddrIn, 0, sizeof(socketAddrIn));
+        std::memset(&socketAddrIn, 0, sizeof(socketAddrIn));
         socketAddrIn.sin_family = AF_INET;
         socketAddrIn.sin_addr.s_addr = htonl(INADDR_ANY);
         socketAddrIn.sin_port = htons(port);
@@ -73,7 +73,7 @@ namespace phodobit {
             SOCKADDR_IN socketAddrIn;
             int socketAddrInSize = sizeof(socketAddrIn);
 
-            memset(&socketAddrIn, 0, socketAddrInSize);
+            std::memset(&socketAddrIn, 0, socketAddrInSize);
 
             clientSocket = accept(serverSocket, (SOCKADDR *)&socketAddrIn, &socketAddrInSize);
 
