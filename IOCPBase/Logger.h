@@ -3,6 +3,7 @@
 #include <string>
 #include <map>
 #include <iostream>
+#include <iomanip>
 
 namespace phodobit {
     enum LogLevel {
@@ -21,6 +22,10 @@ namespace phodobit {
         Logger& warn();
         Logger& info();
         Logger& debug();
+
+        Logger& operator<<(Logger& logger);
+
+        Logger& printByteArray(char* byteArray, unsigned int start, unsigned int end);
 
         template<typename T>
         Logger& operator<<(T input);

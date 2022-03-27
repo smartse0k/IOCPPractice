@@ -50,6 +50,26 @@ namespace phodobit {
         return *this << "[DEBUG] <" << name << "> ";
     }
 
+    Logger& Logger::operator<<(Logger& logger) {
+        return logger;
+    }
+
+    Logger& Logger::printByteArray(char *byteArray, unsigned int start, unsigned int end) {
+        *this << std::hex;
+
+        for (unsigned int i = start; i <= end; i++) {
+            *this << std::setfill('0') << std::setw(2) << static_cast<unsigned int>(byteArray[i]);
+
+            if (i < end) {
+                *this << " ";
+            }
+        }
+
+        *this << std::dec;
+
+        return *this;
+    }
+
     template<typename T>
     Logger& Logger::operator<<(T input)
     {
