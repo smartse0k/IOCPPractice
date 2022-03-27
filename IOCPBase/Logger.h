@@ -5,32 +5,32 @@
 #include <iostream>
 
 namespace phodobit {
-	enum LogLevel {
-		ERR = 0,
-		WARN,
-		INFO,
-		DEBUG
-	};
+    enum LogLevel {
+        ERR = 0,
+        WARN,
+        INFO,
+        DEBUG
+    };
 
-	class Logger {
-	public:
-		static Logger* getLogger(const std::string name);
+    class Logger {
+    public:
+        static Logger* getLogger(const std::string name);
 
-		Logger* setLogLevel(int level);
-		Logger& err();
-		Logger& warn();
-		Logger& info();
-		Logger& debug();
+        Logger* setLogLevel(int level);
+        Logger& err();
+        Logger& warn();
+        Logger& info();
+        Logger& debug();
 
-		template<typename T>
-		Logger& operator<<(T input);
+        template<typename T>
+        Logger& operator<<(T input);
 
-	private:
-		static std::map<std::string, Logger*> *loggers;
-		std::string name;
-		int logLevel;
-		int currentLevel;
+    private:
+        static std::map<std::string, Logger*> *loggers;
+        std::string name;
+        int logLevel;
+        int currentLevel;
 
-		Logger(std::string name, int defaultLogLevel);
-	};
+        Logger(std::string name, int defaultLogLevel);
+    };
 }
