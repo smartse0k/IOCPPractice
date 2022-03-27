@@ -70,11 +70,11 @@ namespace phodobit {
 		while (true) {
 			SOCKET clientSocket;
 			SOCKADDR_IN socketAddrIn;
-			int sockerAddrInSize = sizeof(socketAddrIn);
+			int socketAddrInSize = sizeof(socketAddrIn);
 
-			memset(&socketAddrIn, 0, sockerAddrInSize);
+			memset(&socketAddrIn, 0, socketAddrInSize);
 
-			clientSocket = accept(serverSocket, (SOCKADDR *)&socketAddrIn, &sockerAddrInSize);
+			clientSocket = accept(serverSocket, (SOCKADDR *)&socketAddrIn, &socketAddrInSize);
 
 			int nextCompletionKey = getNextCompletionKey();
 
