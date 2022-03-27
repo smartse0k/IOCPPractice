@@ -25,7 +25,7 @@ namespace phodobit {
 
         Logger& operator<<(Logger& logger);
 
-        Logger& printByteArray(char* byteArray, unsigned int start, unsigned int end);
+        Logger& printByteArray(char* byteArray, unsigned int start, unsigned int length);
 
         template<typename T>
         Logger& operator<<(T input);

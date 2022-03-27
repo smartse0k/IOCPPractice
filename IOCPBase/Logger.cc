@@ -54,9 +54,10 @@ namespace phodobit {
         return logger;
     }
 
-    Logger& Logger::printByteArray(char *byteArray, unsigned int start, unsigned int end) {
+    Logger& Logger::printByteArray(char *byteArray, unsigned int start, unsigned int length) {
         *this << std::hex;
 
+        unsigned int end = start + length - 1;
         for (unsigned int i = start; i <= end; i++) {
             *this << std::setfill('0') << std::setw(2) << static_cast<unsigned int>(byteArray[i]);
 
