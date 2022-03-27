@@ -1,6 +1,9 @@
 #include "PacketProcessor.h"
+#include "Client.h"
 
 namespace phodobit {
+    Logger* PacketProcessor::logger = Logger::getLogger("PacketProcessor")->setLogLevel(LogLevel::DEBUG);
+
     unsigned int PacketProcessor::processorCount = 0;
     std::vector<std::thread*> PacketProcessor::threadList;
 
@@ -59,7 +62,15 @@ namespace phodobit {
                 Packet* packet = q.front();
                 q.pop();
 
-                // TODO : Packet Ã³¸®
+                int completionKey = packet->getOwnerCompletionKey();
+                Client *client = Client::getClient(completionKey);
+
+                if (client == nullptr) {
+                    logger->err() << "Not exist client.";
+                    continue;
+                }
+
+                client->onPacket(packet);
             }
         }
     }

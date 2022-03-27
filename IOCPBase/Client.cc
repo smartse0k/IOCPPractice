@@ -1,5 +1,6 @@
 #include "Client.h"
 #include "Packet.h"
+#include "PacketProcessor.h"
 
 namespace phodobit {
     Logger* Client::logger = Logger::getLogger("Client")->setLogLevel(LogLevel::DEBUG);
@@ -105,7 +106,7 @@ namespace phodobit {
 
             // 아직 패킷 크기가 도착하지 않은 경우
             if (recvOverlapped.currentBufferSize < sizeof(packetLength)) {
-                logger->debug() << "Can not resolve packet size. waiting for next data.";
+                logger->debug() << "Can not resolve packet size. waiting for next data.\n";
                 break;
             }
 
@@ -126,9 +127,10 @@ namespace phodobit {
                 break;
             }
 
-            // 패킷 생성
-            Packet* packet = Packet::createFromByteArray(completionKey, recvOverlapped.buffer, 0, packetLength);
-            packet->printInfoToCLI();
+            // 패킷 생성 (패킷 길이는 제외)
+            Packet* packet = Packet::createFromByteArray(completionKey, &recvOverlapped.buffer[sizeof(packetLength)], 0, packetLength - sizeof(packetLength));
+            PacketProcessor::enqueuePacket(packet);
+            //packet->printInfoToCLI();
 
             recvOverlapped.currentBufferSize -= packetLength;
 
@@ -151,5 +153,27 @@ namespace phodobit {
     void Client::onSend(unsigned int length) {
         // TODO
         throw "No implement function";
+    }
+
+    void Client::onPacket(Packet* packet) {
+        // TODO
+
+        // 패킷 샘플 : 0F 00 01 00 00 00 05 00 00 00 48 65 6c 6c 6f
+        // [unsigned short 15 = SIZE] => Size는 Packet 객체에서는 생략되어 있으므로 주의.
+        // [unsigned int 1 = OP Code]
+        // [unsigned int 5 = string size]
+        // [char(5) = "Hello"]
+
+        unsigned int opcode;
+        packet->read(opcode);
+
+        if (opcode == 1) {
+            std::string message;
+            packet->read(message);
+
+            logger->info() << "Message: " << message << "\n";
+        } else {
+            logger->warn() << "Not support opcode.\n";
+        }
     }
 }

@@ -5,6 +5,7 @@
 
 #include "Logger.h"
 #include "Overlapped.h"
+#include "Packet.h"
 
 namespace phodobit {
     class Client {
@@ -18,6 +19,7 @@ namespace phodobit {
         void send();
         void onRecv(unsigned int length);
         void onSend(unsigned int length);
+        void onPacket(Packet* packet);
     private:
         static Logger* logger;
 

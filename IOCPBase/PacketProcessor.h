@@ -24,6 +24,8 @@ namespace phodobit {
         }
 
     private:
+        static Logger* logger;
+
         static unsigned int processorCount;
         static std::vector<std::thread*> threadList;
 
