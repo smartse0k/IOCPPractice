@@ -89,18 +89,6 @@ namespace phodobit {
                         << "  received size: " << length << "\n"
                         << "  buffer size: " << recvOverlapped.currentBufferSize << "\n";
 
-        if (true) {
-            *logger << "  received buffer: ";
-            logger->printByteArray(recvOverlapped.buffer,
-                                   recvOverlapped.currentBufferSize - length,
-                                   length);
-            *logger << "\n";
-
-            *logger << "  total buffer: ";
-            logger->printByteArray(recvOverlapped.buffer, 0, recvOverlapped.currentBufferSize);
-            *logger << "\n";
-        }
-
         while (true) {
             unsigned short packetLength = 0;
 
@@ -130,7 +118,6 @@ namespace phodobit {
             // 패킷 생성 (패킷 길이는 제외)
             Packet* packet = Packet::createFromByteArray(completionKey, &recvOverlapped.buffer[sizeof(packetLength)], 0, packetLength - sizeof(packetLength));
             PacketProcessor::enqueuePacket(packet);
-            //packet->printInfoToCLI();
 
             recvOverlapped.currentBufferSize -= packetLength;
 
@@ -155,25 +142,72 @@ namespace phodobit {
         throw "No implement function";
     }
 
+    void Client::enqueuePacket(Packet* packet) {
+        mutexReceivedPacketQueue.lock();
+        receivedPacketQueue.push(packet);
+        mutexReceivedPacketQueue.unlock();
+
+        // Atomic Thread Barrier
+        bool isAlreadyProcessing = isProcessing.exchange(true);
+        if (isAlreadyProcessing) {
+            return;
+        }
+
+        unsigned int recursiveDepth = 0;
+        processPacket(recursiveDepth);
+
+        isProcessing.store(false);
+    }
+
+    // from onPacket
+    void Client::processPacket(unsigned int& recursiveDepth) {
+        // DoS를 방지하기 위해 n번의 큐 처리만 진행해준다.
+        const int maxRecursiveDepth = 3;
+        recursiveDepth++;
+
+        if (recursiveDepth >= maxRecursiveDepth) {
+            logger->warn() << "processPacket ignored. exceed max recursive depth. completionKey=" << completionKey << "\n";
+            return;
+        }
+
+        // 큐 처리
+        std::queue<Packet*> processQueue;
+
+        mutexReceivedPacketQueue.lock();
+        processQueue.swap(receivedPacketQueue);
+        mutexReceivedPacketQueue.unlock();
+
+        while (!processQueue.empty()) {
+            Packet* packet = processQueue.front();
+            processQueue.pop();
+
+            onPacket(packet);
+
+            delete packet;
+        }
+
+        // 큐 처리 이후에 쌓인 패킷이 있다면 더 처리 해준다.
+        bool hasPacket = false;
+        mutexReceivedPacketQueue.lock();
+        if (receivedPacketQueue.size() > 0) {
+            hasPacket = true;
+        }
+        mutexReceivedPacketQueue.unlock();
+
+        if (hasPacket) {
+            processPacket(recursiveDepth);
+        }
+    }
+
     void Client::onPacket(Packet* packet) {
-        // TODO
+        logger->debug() << "onPacket()\n";
+        logger->err() << "onPacket is not implemented!\n";
+        packet->printInfoToCLI();
 
         // 패킷 샘플 : 0F 00 01 00 00 00 05 00 00 00 48 65 6c 6c 6f
         // [unsigned short 15 = SIZE] => Size는 Packet 객체에서는 생략되어 있으므로 주의.
         // [unsigned int 1 = OP Code]
         // [unsigned int 5 = string size]
         // [char(5) = "Hello"]
-
-        unsigned int opcode;
-        packet->read(opcode);
-
-        if (opcode == 1) {
-            std::string message;
-            packet->read(message);
-
-            logger->info() << "Message: " << message << "\n";
-        } else {
-            logger->warn() << "Not support opcode.\n";
-        }
     }
 }

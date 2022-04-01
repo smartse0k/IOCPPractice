@@ -70,7 +70,7 @@ namespace phodobit {
                     continue;
                 }
 
-                client->onPacket(packet);
+                client->enqueuePacket(packet);
             }
         }
     }

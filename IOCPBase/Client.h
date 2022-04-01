@@ -2,6 +2,8 @@
 
 #include <map>
 #include <winsock2.h>
+#include <queue>
+#include <mutex>
 
 #include "Logger.h"
 #include "Overlapped.h"
@@ -19,7 +21,9 @@ namespace phodobit {
         void send();
         void onRecv(unsigned int length);
         void onSend(unsigned int length);
-        void onPacket(Packet* packet);
+        void enqueuePacket(Packet* packet);
+        void processPacket(unsigned int& recursiveDepth);
+        virtual void onPacket(Packet* packet);
     private:
         static Logger* logger;
 
@@ -30,5 +34,9 @@ namespace phodobit {
 
         Overlapped recvOverlapped;
         Overlapped sendOverlapped;
+
+        std::queue<Packet*> receivedPacketQueue;
+        std::mutex mutexReceivedPacketQueue;
+        std::atomic<bool> isProcessing;
     };
 }
