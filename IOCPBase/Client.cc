@@ -37,6 +37,10 @@ namespace phodobit {
 
         recvOverlapped.type = Overlapped::TYPE::RECV;
         sendOverlapped.type = Overlapped::TYPE::SEND;
+
+        isSending.store(false);
+        isProcessing.store(false);
+        isClosed.store(false);
     }
 
     void Client::bind(HANDLE iocpHandle) {
@@ -46,6 +50,11 @@ namespace phodobit {
     }
 
     void Client::recv() {
+        // 연결이 끊어졌으므로 스킵한다.
+        if (isClosed.load()) {
+            return;
+        }
+
         DWORD readSize = 0;
         DWORD readFlag = 0;
 
@@ -54,8 +63,10 @@ namespace phodobit {
 
         int ret = WSARecv(socket, &recvOverlapped.wsaBuf, 1, &readSize, &readFlag, &recvOverlapped, nullptr);
 
-        if (ret != SOCKET_ERROR) {
-            logger->err() << "recv failed. ret is not SOCKET_ERROR\n";
+        if (ret == 0) {
+            return;
+        } else if (ret != SOCKET_ERROR) {
+            logger->err() << "recv failed. ret is not SOCKET_ERROR. ret=" << ret << "\n";
             throw "recv failed. ret is not SOCKET_ERROR";
         }
 
@@ -75,19 +86,90 @@ namespace phodobit {
         }
     }
 
+    void Client::send(Packet* packet) {
+        mutexSend.lock();
+
+        unsigned short originalLength = sendOverlapped.currentBufferSize;
+        unsigned short packetLength = sizeof(packetLength) + packet->getLength();
+        unsigned short nextLength = originalLength + packetLength;
+
+        if (nextLength > IOCP_BUFFER_SIZE) {
+            throw "buffer is full";
+        }
+
+        std::memcpy(&sendOverlapped.buffer[originalLength], &packetLength, sizeof(packetLength));
+        std::memcpy(&sendOverlapped.buffer[originalLength + sizeof(packetLength)], packet->getData(), packet->getLength());
+        sendOverlapped.currentBufferSize = nextLength;
+
+        sendOverlapped.wsaBuf.buf = sendOverlapped.buffer;
+        sendOverlapped.wsaBuf.len = nextLength;
+
+        send();
+        
+        mutexSend.unlock();
+    }
+
     void Client::send() {
-        // TODO
-        throw "No implement function";
+        // 연결이 끊어졌으므로 스킵한다.
+        if (isClosed.load()) {
+            return;
+        }
+
+        // 이미 보내고 있는 중이므로 스킵한다. send(Packet*)과 onSend()에서 호출된다.
+        if (isSending.load()) {
+            return;
+        }
+
+        if (sendOverlapped.currentBufferSize <= 0) {
+            logger->err() << "send failed. current buffer is empty\n";
+            return;
+        }
+
+        if (sendOverlapped.wsaBuf.len <= 0) {
+            logger->err() << "send failed. wsaBuf.len is zero\n";
+            return;
+        }
+
+        // sendSize는 WSASend 호출했을 당시 바로 전송된 크기인데,
+        // 이 크기도 IOCP Event에 포함되어 응답되므로 유의미하지 않다.
+        DWORD sendSize;
+        int ret = WSASend(socket, &sendOverlapped.wsaBuf, 1, &sendSize, 0, &sendOverlapped, NULL);
+
+        if (ret == 0) {
+            // 즉시 전송된 경우 아무것도 하지 않는다.
+        } else if (ret == SOCKET_ERROR) {
+            int lastError = WSAGetLastError();
+
+            switch (lastError) {
+            case WSA_IO_PENDING:
+                // IOCP 전송 대기 상태.
+                break;
+            default:
+                logger->err() << "send failed. lastError is " << lastError << "\n";
+                throw "send failed. ret is not WSA_IO_PENDING";
+            }
+        } else {
+            logger->err() << "send failed. ret is not SOCKET_ERROR. ret=" << ret << "\n";
+            throw "send failed. ret is not SOCKET_ERROR";
+        }
     }
 
     void Client::onRecv(unsigned int length) {
         logger->debug() << "onRecv()\n";
 
+        // 연결이 끊어진 경우
+        if (length == 0) {
+            onClose();
+            return;
+        }
+
         recvOverlapped.currentBufferSize += length;
 
-        logger->debug() << "Receive info...\n"
-                        << "  received size: " << length << "\n"
-                        << "  buffer size: " << recvOverlapped.currentBufferSize << "\n";
+        if (false) {
+            logger->debug() << "Receive info...\n"
+                            << "  received size: " << length << "\n"
+                            << "  buffer size: " << recvOverlapped.currentBufferSize << "\n";
+        }
 
         while (true) {
             unsigned short packetLength = 0;
@@ -135,20 +217,82 @@ namespace phodobit {
             // 남은 데이터 이동
             std::memmove(recvOverlapped.buffer, &recvOverlapped.buffer[packetLength], recvOverlapped.currentBufferSize);
         }
+
+        recv();
     }
 
     void Client::onSend(unsigned int length) {
-        // TODO
-        throw "No implement function";
+        // 연결이 끊어진 경우
+        if (length == 0) {
+            onClose();
+            return;
+        }
+
+        mutexSend.lock();
+
+        isSending.store(false);
+
+        sendOverlapped.currentBufferSize -= length;
+
+        // 이 경우가 나와서는 안된다.
+        if (sendOverlapped.currentBufferSize < 0) {
+            logger->err() << "sendOverlapped.currentBufferSize is less than 0";
+            throw "sendOverlapped.currentBufferSize is less than 0";
+        }
+
+        std::memmove(sendOverlapped.buffer, &sendOverlapped.buffer[length], length);
+        sendOverlapped.wsaBuf.len = sendOverlapped.currentBufferSize;
+
+        // 아직 보낼 데이터가 남아있다.
+        if (sendOverlapped.currentBufferSize > 0) {
+            send();
+        }
+
+        mutexSend.unlock();
     }
 
+    void Client::onClose() {
+        isClosed.store(true);
+
+        _close();
+    }
+
+    void Client::_close() {
+        logger->debug() << "_close()\n";
+
+        mutexClosing.lock();
+
+        // 처리중인 Recv가 있다면 현재는 생략하고, Recv가 다시 호출하도록 기다린다.
+        if (isProcessing.load()) {
+            logger->debug() << "_close ignored. the client is receiving\n";
+            return mutexClosing.unlock();
+        }
+
+        // 처리중인 Send가 있다면 현재는 생략하고, Send가 다시 호출하도록 기다린다.
+        if (isSending.load()) {
+            logger->debug() << "_close ignored. the client is sending\n";
+            return mutexClosing.unlock();
+        }
+
+        shutdown(socket, SD_BOTH);
+        closesocket(socket);
+
+        logger->debug() << "socket closed. completionKey=" << completionKey << "\n";
+        
+        mutexClosing.unlock();
+    }
+
+    // TODO : 받은 패킷에 대해서 인큐하는 것이므로... 네이밍을 바꾸던지... 해야할듯
     void Client::enqueuePacket(Packet* packet) {
         mutexReceivedPacketQueue.lock();
+
         receivedPacketQueue.push(packet);
-        mutexReceivedPacketQueue.unlock();
 
         // Atomic Thread Barrier
         bool isAlreadyProcessing = isProcessing.exchange(true);
+
+        mutexReceivedPacketQueue.unlock();
+
         if (isAlreadyProcessing) {
             return;
         }
@@ -157,6 +301,10 @@ namespace phodobit {
         processPacket(recursiveDepth);
 
         isProcessing.store(false);
+
+        if (isClosed.load()) {
+            _close();
+        }
     }
 
     // from onPacket
@@ -201,8 +349,11 @@ namespace phodobit {
 
     void Client::onPacket(Packet* packet) {
         logger->debug() << "onPacket()\n";
+
         logger->err() << "onPacket is not implemented!\n";
-        packet->printInfoToCLI();
+
+        // Echo Test
+        send(packet);
 
         // 패킷 샘플 : 0F 00 01 00 00 00 05 00 00 00 48 65 6c 6c 6f
         // [unsigned short 15 = SIZE] => Size는 Packet 객체에서는 생략되어 있으므로 주의.

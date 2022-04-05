@@ -103,19 +103,18 @@ namespace phodobit {
                 INFINITE
             );
 
-            logger->debug() << "transferByteSize: " << transferByteSize << "\n";
-
             Client *client = Client::getClient(completionKey);
             if (client == nullptr) {
                 logger->err() << "client is null\n";
                 continue;
             }
 
-            if (overlapped->type == Overlapped::TYPE::RECV) {
+            if (!ret) {
+                client->onClose();
+            } else if (overlapped->type == Overlapped::TYPE::RECV) {
                 client->onRecv(transferByteSize);
-                client->recv();
             } else if (overlapped->type == Overlapped::TYPE::SEND) {
-                // TODO : Send에 대해서 만들자
+                client->onSend(transferByteSize);
             } else {
                 logger->err() << "not initilized overlapped detected. threadId=" << threadId << ", completionKey=" << completionKey;
                 continue;

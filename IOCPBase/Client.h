@@ -18,9 +18,10 @@ namespace phodobit {
         Client(SOCKET socket, int completionKey);
         void bind(HANDLE iocpHandle);
         void recv();
-        void send();
+        void send(Packet* packet);
         void onRecv(unsigned int length);
         void onSend(unsigned int length);
+        void onClose();
         void enqueuePacket(Packet* packet);
         void processPacket(unsigned int& recursiveDepth);
         virtual void onPacket(Packet* packet);
@@ -34,9 +35,17 @@ namespace phodobit {
 
         Overlapped recvOverlapped;
         Overlapped sendOverlapped;
+        std::atomic<bool> isSending;
+        std::mutex mutexSend;
 
         std::queue<Packet*> receivedPacketQueue;
         std::mutex mutexReceivedPacketQueue;
         std::atomic<bool> isProcessing;
+
+        std::atomic<bool> isClosed;
+        std::mutex mutexClosing;
+
+        void send();
+        void _close();
     };
 }
