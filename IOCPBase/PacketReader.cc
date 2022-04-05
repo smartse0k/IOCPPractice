@@ -26,13 +26,9 @@ namespace phodobit {
     }
 
     bool Packet::read(std::string& out) {
-        // TODO : unsigned int·Î º¯°æ
+        unsigned int size = 0;
 
-        int size = -1;
-        bool ret;
-        ret = read(size);
-
-        if (!ret) {
+        if (!read(size)) {
             return false;
         }
 
@@ -40,12 +36,8 @@ namespace phodobit {
             return false;
         }
 
-        char* temp = new char[size + 1];
-        std::memcpy(temp, &data[readOffset], size);
-        temp[size] = 0;
-        out = std::string(temp);
-
-        delete[] temp;
+        out.assign(data, readOffset, size);
+        readOffset += size;
 
         return true;
     }
