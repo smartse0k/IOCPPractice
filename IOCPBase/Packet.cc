@@ -24,6 +24,14 @@ namespace phodobit {
     // Read 관련은 PacketReader.cc에서 구현한다.
     // Write 관련은 PacketWriter.cc에서 구현한다.
 
+    char* Packet::getData() {
+        return data;
+    }
+
+    unsigned short Packet::getLength() {
+        return length;
+    }
+
     int Packet::getOwnerCompletionKey() {
         return ownerCompletionKey;
     }

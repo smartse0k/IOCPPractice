@@ -12,6 +12,8 @@ namespace phodobit {
         bool read(std::string& out);
 
         int getOwnerCompletionKey();
+        char* getData();
+        unsigned short getLength();
 
         void printInfoToCLI();
 
