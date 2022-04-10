@@ -6,32 +6,7 @@ namespace phodobit {
     Logger* Client::logger = Logger::getLogger("Client")->setLogLevel(LogLevel::DEBUG);
     std::map<int, Client*>* Client::clients;
 
-    Client *Client::getClient(int completionKey) {
-        if (clients == nullptr) {
-            logger->info() << "create client map\n";
-            clients = new std::map<int, Client*>();
-        }
-
-        std::map<int, Client*>::iterator it = clients->find(completionKey);
-        if (it == clients->end()) {
-            return nullptr;
-        }
-
-        return it->second;
-    }
-
-    void Client::setClient(int completionKey, Client* client) {
-        logger->debug() << "setClient()\n";
-
-        if (clients == nullptr) {
-            logger->info() << "create client map\n";
-            clients = new std::map<int, Client*>();
-        }
-
-        clients->insert({ completionKey, client });
-    }
-
-    Client::Client(SOCKET socket, int completionKey) {
+    Client::Client(int completionKey, SOCKET socket) {
         this->socket = socket;
         this->completionKey = completionKey;
 
@@ -198,8 +173,8 @@ namespace phodobit {
             }
 
             // 패킷 생성 (패킷 길이는 제외)
-            Packet* packet = Packet::createFromByteArray(completionKey, &recvOverlapped.buffer[sizeof(packetLength)], 0, packetLength - sizeof(packetLength));
-            PacketProcessor::enqueuePacket(packet);
+            Packet* packet = Packet::createFromByteArray(&recvOverlapped.buffer[sizeof(packetLength)], 0, packetLength - sizeof(packetLength));
+            PacketProcessor::enqueuePacket(this, packet);
 
             recvOverlapped.currentBufferSize -= packetLength;
 
@@ -349,16 +324,6 @@ namespace phodobit {
 
     void Client::onPacket(Packet* packet) {
         logger->debug() << "onPacket()\n";
-
         logger->err() << "onPacket is not implemented!\n";
-
-        // Echo Test
-        send(packet);
-
-        // 패킷 샘플 : 0F 00 01 00 00 00 05 00 00 00 48 65 6c 6c 6f
-        // [unsigned short 15 = SIZE] => Size는 Packet 객체에서는 생략되어 있으므로 주의.
-        // [unsigned int 1 = OP Code]
-        // [unsigned int 5 = string size]
-        // [char(5) = "Hello"]
     }
 }

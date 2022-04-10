@@ -12,10 +12,7 @@
 namespace phodobit {
     class Client {
     public:
-        static Client* getClient(int completionKey);
-        static void setClient(int completionKey, Client*);
-
-        Client(SOCKET socket, int completionKey);
+        Client(int completionKey, SOCKET socket);
         void bind(HANDLE iocpHandle);
         void recv();
         void send(Packet* packet);
