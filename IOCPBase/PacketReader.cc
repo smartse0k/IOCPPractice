@@ -36,7 +36,7 @@ namespace phodobit {
             return false;
         }
 
-        out.assign(data, readOffset, size);
+        out.assign(&data[readOffset], size);
         readOffset += size;
 
         return true;
