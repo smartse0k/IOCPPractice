@@ -5,13 +5,13 @@
 namespace phodobit {
     class Packet {
     public:
-        static Packet *createFromByteArray(int ownerCompletionKey, char *byteArray, unsigned int start, unsigned short length);
+        static Packet *createFromByteArray(char *byteArray, unsigned int start, unsigned short length);
+        Packet();
 
         bool read(int& out);
         bool read(unsigned int& out);
         bool read(std::string& out);
 
-        int getOwnerCompletionKey();
         char* getData();
         unsigned short getLength();
 
@@ -21,7 +21,6 @@ namespace phodobit {
     private:
         static Logger* logger;
 
-        int ownerCompletionKey;
         char* data;
         unsigned short length;
 

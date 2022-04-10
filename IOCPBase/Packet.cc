@@ -1,16 +1,22 @@
 #include <cstring>
 
 #include "Packet.h"
+#include "Client.h"
 
 namespace phodobit {
     Logger* Packet::logger = Logger::getLogger("Packet")->setLogLevel(LogLevel::DEBUG);
 
-    Packet* Packet::createFromByteArray(int ownerCompletionKey, char* byteArray, unsigned int start, unsigned short length) {
+    Packet::Packet() {
+        data = nullptr;
+        length = 0;
+        _length = 0;
+        readOffset = 0;
+    }
+
+    Packet* Packet::createFromByteArray(char* byteArray, unsigned int start, unsigned short length) {
         logger->debug() << "createFromByteArray()\n";
 
         Packet* packet = new Packet();
-
-        packet->ownerCompletionKey = ownerCompletionKey;
 
         packet->data = new char[length];
         std::memcpy(packet->data, &byteArray[start], length);
@@ -30,10 +36,6 @@ namespace phodobit {
 
     unsigned short Packet::getLength() {
         return length;
-    }
-
-    int Packet::getOwnerCompletionKey() {
-        return ownerCompletionKey;
     }
 
     void Packet::printInfoToCLI() {
