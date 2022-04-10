@@ -277,6 +277,7 @@
     <ClCompile Include="Packet.cc" />
     <ClCompile Include="PacketProcessor.cc" />
     <ClCompile Include="PacketReader.cc" />
+    <ClCompile Include="PacketWriter.cc" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Client.h" />

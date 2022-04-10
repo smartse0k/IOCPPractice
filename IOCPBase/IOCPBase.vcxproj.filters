@@ -39,6 +39,9 @@
     <ClCompile Include="ClientStorage.cc">
       <Filter>소스 파일</Filter>
     </ClCompile>
+    <ClCompile Include="PacketWriter.cc">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="PacketProcessor.h">
