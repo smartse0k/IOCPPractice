@@ -6,6 +6,8 @@
 #include <mutex>
 
 #include "Logger.h"
+#include "Client.h"
+#include "ClientStorage.h"
 
 namespace phodobit {
     class IOCP {
@@ -16,6 +18,7 @@ namespace phodobit {
         int getNextCompletionKey();
         void createAcceptThread(int threadCount = 1);
         void createWorkerThread(int threadCount = 2);
+        virtual Client* onAccept(int completionKey, SOCKET socket);
     private:
         static Logger* logger;
 
@@ -26,6 +29,8 @@ namespace phodobit {
         std::vector<std::thread*> workerThreads;
 
         std::mutex mutexGetNextCompletionKey;
+
+        ClientStorage clientStorage;
 
         void acceptor();
         void worker();

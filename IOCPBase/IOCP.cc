@@ -44,7 +44,8 @@ namespace phodobit {
 
         int ret = ::bind(serverSocket, (sockaddr*)&socketAddrIn, sizeof(socketAddrIn));
         if (ret == SOCKET_ERROR) {
-            logger->err() << "bind failed.\n";
+            int lastError = WSAGetLastError();
+            logger->err() << "bind failed. lastError=" << lastError << "\n";
             throw "bind failed.";
         }
     }
@@ -79,11 +80,19 @@ namespace phodobit {
 
             int nextCompletionKey = getNextCompletionKey();
 
-            Client* client = new Client(clientSocket, nextCompletionKey);
-            Client::setClient(nextCompletionKey, client);
+            Client* client = onAccept(nextCompletionKey, clientSocket);
+            clientStorage.set(nextCompletionKey, client);
             client->bind(iocpHandle);
             client->recv();
         }
+    }
+
+    Client* IOCP::onAccept(int completionKey, SOCKET socket) {
+        logger->err() << "onConnectClient is not implemented! use default client\n";
+        
+        Client* client = new Client(completionKey, socket);
+
+        return client;
     }
 
     // Worker Thread Entry Point
@@ -103,7 +112,7 @@ namespace phodobit {
                 INFINITE
             );
 
-            Client *client = Client::getClient(completionKey);
+            Client* client = clientStorage.get(completionKey);
             if (client == nullptr) {
                 logger->err() << "client is null\n";
                 continue;
